@@ -13,6 +13,8 @@
 	"dependencies": {
 		"@vercel/postgres": "^0.7.2",
 		"dotenv": "^16.4.1",
-		"express": "^4.18.2"
+		"express": "^4.18.2",
+		"puppeteer": "^19.7.0",
+    		"cloudinary": "^2.2.0"
 	}
 }

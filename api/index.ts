@@ -43,8 +43,9 @@ const upload = multer();
 // Route to handle screenshot creation and upload
 app.post('/api/screenshot', upload.none(), async (req, res) => {
   
-	const { password, url } = req.query;
+ const { password, url } = req.query;
   const validPassword = process.env.PASSWORD;
+
 
 
   // Validate URL
@@ -55,7 +56,7 @@ app.post('/api/screenshot', upload.none(), async (req, res) => {
   try {
     // Launch Puppeteer with chrome-aws-lambda
     const browser = await puppeteer.launch({
-      args: chromium.args,
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
       executablePath: await chromium.executablePath,
       headless: chromium.headless,
     });

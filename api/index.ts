@@ -57,8 +57,8 @@ app.post('/api/screenshot', upload.none(), async (req, res) => {
 
     await page.setUserAgent('Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15A5341f Safari/604.1');
     await page.setViewport({
-      width: 768,
-      height: 1024,
+      width: 1024,
+      height: 1220,
       isMobile: true,
       hasTouch: true,
       deviceScaleFactor: 2

@@ -36,7 +36,7 @@ app.get('/about', function (req, res) {
 
 // Multer middleware for handling multipart/form-data
 const upload = multer();
-
+const SCREENSHOT_PATH = '/tmp/screenshot.png';
 // Route to handle screenshot creation and upload
 app.post('/api/screenshot', upload.none(), async (req, res) => {
   const { url, password } = req.body;
@@ -52,35 +52,27 @@ app.post('/api/screenshot', upload.none(), async (req, res) => {
   }
 
   try {
-    const browser = await puppeteer.launch();
+     // Launch Puppeteer with new headless mode
+    const browser = await puppeteer.launch({ headless: 'new' });
     const page = await browser.newPage();
-
-    await page.setUserAgent('Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15A5341f Safari/604.1');
-    await page.setViewport({
-      width: 1024,
-      height: 1220,
-      isMobile: true,
-      hasTouch: true,
-      deviceScaleFactor: 2
-    });
-
     await page.goto(url, { waitUntil: 'networkidle2' });
-
-    const screenshotBuffer = await page.screenshot();
+    await page.setViewport({ width: 768, height: 1024, isMobile: true });
+    await page.screenshot({ path: SCREENSHOT_PATH });
     await browser.close();
 
-    // Upload the screenshot to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload_stream({ resource_type: 'image', folder: 'screenshots' }, (error, result) => {
-      if (error) {
-        return res.status(500).send('An error occurred while uploading to Cloudinary.');
-      }
-      res.send({ url: result.secure_url });
+    // Upload screenshot to Cloudinary
+    const result = await cloudinary.uploader.upload(SCREENSHOT_PATH, {
+      folder: 'screenshots',
+      use_filename: true,
+      overwrite: true,
+      notification_url: 'https://mysite.example.com/notify_endpoint'
     });
 
-    uploadResult.end(screenshotBuffer);
-
+    // Return the URL of the uploaded screenshot
+    res.status(200).json({ url: result.secure_url });
   } catch (error) {
-    res.status(500).send('An error occurred while taking the screenshot.');
+    console.error(error);
+    res.status(500).send('Internal Server Error');
   }
 });
 

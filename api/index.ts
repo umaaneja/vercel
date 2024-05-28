@@ -39,7 +39,7 @@ app.get('/about', function (req, res) {
 
 // Multer middleware for handling multipart/form-data
 const upload = multer();
-const SCREENSHOT_PATH = '/tmp/screenshot.png';
+
 // Route to handle screenshot creation and upload
 app.post('/api/screenshot', upload.none(), async (req, res) => {
 

@@ -4,6 +4,7 @@ const express = require('express');
 const multer = require('multer');
 const puppeteer = require('puppeteer');
 const cloudinary = require('cloudinary').v2;
+const chromium = require('chrome-aws-lambda');
 
 const app = express();
 
@@ -13,6 +14,8 @@ const path = require('path');
 
 // Create application/x-www-form-urlencoded parser
 const urlencodedParser = bodyParser.urlencoded({ extended: false });
+
+const SCREENSHOT_PATH = '/tmp/screenshot.png';
 
 // Cloudinary configuration
 cloudinary.config({
@@ -39,21 +42,28 @@ const upload = multer();
 const SCREENSHOT_PATH = '/tmp/screenshot.png';
 // Route to handle screenshot creation and upload
 app.post('/api/screenshot', upload.none(), async (req, res) => {
-  const { url, password } = req.body;
 
-  const app_password = process.env.APPPASSWORD
+	const { password, url } = req.query;
+  const validPassword = process.env.PASSWORD;
+
   // Check for password
-  if (password !== app_password) {
+  if (password !== validPassword) {
     return res.status(401).send('Unauthorized: Invalid password.');
   }
 
+  // Validate URL
   if (!url) {
-    return res.status(400).send('Please provide a URL.');
+    return res.status(400).send('Bad Request: URL is required.');
   }
 
   try {
-     // Launch Puppeteer with new headless mode
-    const browser = await puppeteer.launch({ headless: 'new' });
+    // Launch Puppeteer with chrome-aws-lambda
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath,
+      headless: chromium.headless,
+    });
+
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle2' });
     await page.setViewport({ width: 768, height: 1024, isMobile: true });
@@ -74,6 +84,7 @@ app.post('/api/screenshot', upload.none(), async (req, res) => {
     console.error(error);
     res.status(500).send('Internal Server Error');
   }
+	
 });
 
 

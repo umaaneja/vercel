@@ -1,9 +1,10 @@
-require('dotenv').config();
+import express from 'express';
+import axios from 'axios';
+import { v2 as cloudinary } from 'cloudinary';
+import dotenv from 'dotenv';
 
-const express = require('express');
-const axios = require('axios');
-const { v2: cloudinary } = require('cloudinary').config();
-require('dotenv').config();
+dotenv.config();
+
 
 const app = express();
 

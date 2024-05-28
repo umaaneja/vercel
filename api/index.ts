@@ -1,13 +1,11 @@
 require('dotenv').config();
 
 const express = require('express');
-const multer = require('multer');
-const puppeteer = require('puppeteer-core');
-const cloudinary = require('cloudinary').v2;
-const chromium = require('chrome-aws-lambda');
+const axios = require('axios');
+const { v2: cloudinary } = require('cloudinary').config();
+require('dotenv').config();
 
 const app = express();
-
 
 const bodyParser = require('body-parser');
 const path = require('path');
@@ -36,46 +34,37 @@ app.get('/about', function (req, res) {
 });
 
 
-
-// Multer middleware for handling multipart/form-data
-const upload = multer();
-
 // Route to handle screenshot creation and upload
 app.post('/api/screenshot', upload.none(), async (req, res) => {
   
- const { password, url } = req.query;
+const { password, url } = req.body;
   const validPassword = process.env.PASSWORD;
 
+  if (password !== validPassword) {
+    return res.status(401).send('Unauthorized: Invalid password.');
+  }
 
-
-  // Validate URL
   if (!url) {
     return res.status(400).send('Bad Request: URL is required.');
   }
 
   try {
-    // Launch Puppeteer with chrome-aws-lambda
-    const browser = await puppeteer.launch({
-      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless,
+    const apiKey = process.env.APIFY_API_KEY;
+    const screenshotUrl = `https://api.apify.com/v2/browser-info/screenshot?token=${apiKey}&url=${encodeURIComponent(url)}&device=Apple-iPad-Pro-2018-12.9`;
+
+    const response = await axios.get(screenshotUrl, {
+      responseType: 'arraybuffer',
     });
 
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2' });
-    await page.setViewport({ width: 768, height: 1024, isMobile: true });
-    await page.screenshot({ path: SCREENSHOT_PATH });
-    await browser.close();
+    const screenshotBuffer = Buffer.from(response.data, 'binary');
 
     // Upload screenshot to Cloudinary
-    const result = await cloudinary.uploader.upload(SCREENSHOT_PATH, {
+    const result = await cloudinary.uploader.upload(`data:image/png;base64,${screenshotBuffer.toString('base64')}`, {
       folder: 'screenshots',
       use_filename: true,
       overwrite: true,
-      notification_url: 'https://mysite.example.com/notify_endpoint'
     });
 
-    // Return the URL of the uploaded screenshot
     res.status(200).json({ url: result.secure_url });
   } catch (error) {
     console.error(error);

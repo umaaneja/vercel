@@ -42,14 +42,10 @@ const upload = multer();
 
 // Route to handle screenshot creation and upload
 app.post('/api/screenshot', upload.none(), async (req, res) => {
-
+  
 	const { password, url } = req.query;
   const validPassword = process.env.PASSWORD;
 
-  // Check for password
-  if (password !== validPassword) {
-    return res.status(401).send('Unauthorized: Invalid password.');
-  }
 
   // Validate URL
   if (!url) {
